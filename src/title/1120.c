@@ -646,10 +646,8 @@ MenuPage D_800EB468 = {
     },
 };
 
-MenuPage *D_800EB8CC[PAGES_COUNT] = {
-    [PAGE_MAIN] = &D_800EB468,
-
-    [PAGE_LOAD] = &(MenuPage) {
+/* buildfix: compound literals moved out for GCC 12 */
+static MenuPage local_page_PAGE_LOAD = {
         .items_type = 0,
         .offset = { 9, 11, 16, 5 },
         .field8_0x12 = 8,
@@ -674,9 +672,9 @@ MenuPage *D_800EB8CC[PAGES_COUNT] = {
             { 0x01, 4, 0, 0, NULL, NULL, NULL },
             { 0x02, 0, 0, 0, NULL, NULL, NULL },
         },
-    },
+    };
 
-    [PAGE_SAVE] = &(MenuPage) {
+static MenuPage local_page_PAGE_SAVE = {
         .items_type = 0,
         .offset = { 9, 12, 16, 4 },
         .field8_0x12 = 8,
@@ -699,9 +697,9 @@ MenuPage *D_800EB8CC[PAGES_COUNT] = {
             { 0x00, 5, 0, 0, NULL, NULL, NULL },
             { 0x02, 0, 0, 0, NULL, NULL, NULL },
         },
-    },
+    };
 
-    [PAGE_SETTINGS] = &(MenuPage) {
+static MenuPage local_page_PAGE_SETTINGS = {
         .items_type = 0,
         .offset = { 5, 10, 29, 6 },
         .field8_0x12 = 8,
@@ -728,9 +726,9 @@ MenuPage *D_800EB8CC[PAGES_COUNT] = {
             { 0x60, 0, 0, 0, toggle_movie, toggle_movie, toggle_movie },
             { 0x02 },
         },
-    },
+    };
 
-    [PAGE_CONFIRM_LOAD] = &(MenuPage) {
+static MenuPage local_page_PAGE_CONFIRM_LOAD = {
         .items_type = 1,
         .offset = { 13, 5, 8, 2 },
         .field8_0x12 = 8,
@@ -746,9 +744,9 @@ MenuPage *D_800EB8CC[PAGES_COUNT] = {
             { 0x41, 0xFF, 0xFF, 0, func_800E1928, NULL, NULL },
             { 0x02, 0xFF, 0xFF, 0, NULL, NULL, NULL },
         },
-    },
+    };
 
-    [PAGE_CONFIRM_SAVE] = &(MenuPage) {
+static MenuPage local_page_PAGE_CONFIRM_SAVE = {
         .items_type = 1,
         .offset = { 13, 5, 8, 2 },
         .field8_0x12 = 8,
@@ -766,9 +764,9 @@ MenuPage *D_800EB8CC[PAGES_COUNT] = {
             { 0x41, 0xFF, 0xFF, 0, func_800E1A88, NULL, NULL },
             { 0x02, 0xFF, 0xFF, 0, NULL, NULL, NULL },
         },
-    },
+    };
 
-    [PAGE_YES_NO] = &(MenuPage) {
+static MenuPage local_page_PAGE_YES_NO = {
         .items_type = 1,
         .offset = { 13, 6, 31, 2 },
         .field8_0x12 = 8,
@@ -786,9 +784,9 @@ MenuPage *D_800EB8CC[PAGES_COUNT] = {
             { 0x41, 0xFF, 0xFF, 0, func_800E1BCC, NULL, NULL },
             { 0x02, 0xFF, 0xFF, 0, NULL, NULL, NULL },
         },
-    },
+    };
 
-    [PAGE_SETTINGS_TEST] = &(MenuPage) {
+static MenuPage local_page_PAGE_SETTINGS_TEST = {
         .items_type = 0,
         .offset = { 5, 8, 29, 8 },
         .field8_0x12 = 8,
@@ -819,9 +817,9 @@ MenuPage *D_800EB8CC[PAGES_COUNT] = {
             { 0x60, 0, 0, 0, toggle_movie, toggle_movie, toggle_movie },
             { 0x02 },
         },
-    },
+    };
 
-    [PAGE_SETTINGS_WIDE] = &(MenuPage) {
+static MenuPage local_page_PAGE_SETTINGS_WIDE = {
         .items_type = 0,
         .offset = { 5, 9, 29, 7 },
         .field8_0x12 = 8,
@@ -858,7 +856,26 @@ MenuPage *D_800EB8CC[PAGES_COUNT] = {
             { 0x60, 0, 0, 0, toggle_movie, toggle_movie, toggle_movie },
             { 0x02 },
         },
-    },
+    };
+
+MenuPage *D_800EB8CC[PAGES_COUNT] = {
+    [PAGE_MAIN] = &D_800EB468,
+
+    [PAGE_LOAD] = &local_page_PAGE_LOAD,
+
+    [PAGE_SAVE] = &local_page_PAGE_SAVE,
+
+    [PAGE_SETTINGS] = &local_page_PAGE_SETTINGS,
+
+    [PAGE_CONFIRM_LOAD] = &local_page_PAGE_CONFIRM_LOAD,
+
+    [PAGE_CONFIRM_SAVE] = &local_page_PAGE_CONFIRM_SAVE,
+
+    [PAGE_YES_NO] = &local_page_PAGE_YES_NO,
+
+    [PAGE_SETTINGS_TEST] = &local_page_PAGE_SETTINGS_TEST,
+
+    [PAGE_SETTINGS_WIDE] = &local_page_PAGE_SETTINGS_WIDE,
 };
 
 // Progress enum's strings in two encodings
