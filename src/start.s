@@ -15,6 +15,7 @@ glabel jt_ptr
 glabel announce_entering_main
     addi       $sp, $sp, -0x4 /* handwritten instruction */
     sw         $ra, 0x0($sp)
+    move       $v0, $zero /* buildfix: no stale v0 if the BIOS leaves it */
     lui        $a0, (0x80000000 >> 16)
     syscall    0
     beqz       $v0, .no_action

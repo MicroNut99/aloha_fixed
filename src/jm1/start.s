@@ -12,6 +12,7 @@ glabel func_800C6B64
 glabel func_800C6B68
 /* 17368 800C6B68 FCFFBD23 */  addi       $sp, $sp, -0x4 # handwritten instruction
 /* 1736C 800C6B6C 0000BFAF */  sw         $ra, 0x0($sp)
+move $v0, $zero # buildfix: v0 = 0 before the syscall
 /* 17370 800C6B70 0080043C */  lui        $a0, (0x80000000 >> 16)
 /* 17374 800C6B74 0C000000 */  syscall    0
 /* 17378 800C6B78 00000000 */  nop
