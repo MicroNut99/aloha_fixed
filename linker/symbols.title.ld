@@ -17,3 +17,6 @@ D_800F4DAC = D_800F4DA8 + 4;
 D_800F7F5C = D_800F7F50 + 0x0C;
 D_800F7F6C = D_800F7F50 + 0x1C;
 D_800F7F6E = D_800F7F50 + 0x1E;
+
+D_800EBA78 = D_800EBA7C - 4; /* buildfix: the C code reads D_800EBA78 + 4 */
+D_801A0FD8 = 0x801A0FD8; /* buildfix: outside the module */

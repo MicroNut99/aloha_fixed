@@ -28,6 +28,7 @@ INCLUDE_ASM("asm/jm1/nonmatchings/38F38", func_800E89B8);
 
 // two functions in this one
 INCLUDE_ASM("asm/jm1/nonmatchings/38F38", func_800E8A40);
+INCLUDE_ASM("asm/jm1/nonmatchings/38F38", func_800E8AEC); /* buildfix */
 
 // empty_ot
 INCLUDE_ASM("asm/jm1/nonmatchings/38F38", func_800E8B5C);
