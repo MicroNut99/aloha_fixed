@@ -321,7 +321,7 @@ compileFlags = [
 
 # Ninja setup
 Ninja.set("version", version)
-Ninja.set("cross", "mipsel-unknown-none-elf-")
+Ninja.set("cross", os.environ.get("CROSS", "mipsel-unknown-none-elf-"))
 Ninja.set("knifedir", "tools/knife")
 Ninja.set("knife", "build/knife")
 Ninja.set("makeiso", "mkpsxiso")
@@ -358,7 +358,8 @@ Ninja.param("generator", "1")
 Ninja.rule("extract", "dd if=$in of=$out bs=1 skip=$offset count=$size")
 Ninja.param("description", "Extracting asset $out")
 
-Ninja.rule("embed", "${cross}objcopy -I binary -O elf32-littlemips $in $out")
+# Linux-targeted binutils (mipsel-linux-gnu-) only know the "trad" name
+Ninja.rule("embed", "${cross}objcopy -I binary -O " + ("elf32-tradlittlemips" if "linux" in os.environ.get("CROSS", "") else "elf32-littlemips") + " $in $out")
 Ninja.param("description", "Turning binary file $in into embeddable elf")
 
 # Build tools
