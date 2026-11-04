@@ -13,3 +13,9 @@ execs/*
 assets/*
 build/
 compile_commands.json
+
+# tools/buildfix/regen.py output (made from your own disc)
+asm/jm1/nonmatchings/
+asm/title/
+src/jm1/local_asm.c
+src/jm1/local_data.s
