@@ -1,3 +1,80 @@
+# aloha_fixed: getting JM1 and TITLE to build again
+
+This is [NotExactlySiev/aloha](https://github.com/NotExactlySiev/aloha) at `03e5605` plus one branch,
+**[`build-fixes`](../../tree/build-fixes)**: what it takes to build TITLE.PEX and JM1/MAIN.PEX again.
+Each fix is its own commit, so the original author can cherry-pick what he wants. Nothing in the branch is
+game code or data: the missing assembly is regenerated from your own disc by a script, and its output is
+git-ignored.
+
+## What was broken
+
+The `INCLUDE_ASM` lines in `src/jm1` and `src/title` point at `asm/jm1/nonmatchings/...` and
+`asm/title/...`, which are no longer in the repository (the title has no data files at all either). Some of
+the C code has also moved on since that assembly was made: functions and variables were renamed, and the
+old copy of libgpu/libetc in JM1 was taken out ("more libgpu removed") while the assembly still calls it.
+
+## The fixes (branch `build-fixes`)
+
+| Commit | File | Fix |
+|---|---|---|
+| 1 | `mkninja.py` | The cross-compiler prefix comes from `CROSS=` (default unchanged), and the embed rule uses `elf32-tradlittlemips` with a Linux toolchain (`mipsel-linux-gnu-`), whose binutils reject `elf32-littlemips`. |
+| 2 | `src/start.s`, `src/jm1/start.s` | `v0 = 0` before the `syscall 0` in `announce_entering_main`. The syscall does not set `v0`, and the next instructions `jalr v0` when it is not 0. The rebuilt TITLE's `main` leaves `0x800F0000` there and froze at boot; the original only worked because `v0` happened to be 0. |
+| 3 | `src/title/1120.c` | The menu pages written as `&(MenuPage){...}` with a flexible array member: GCC 12 stops with "non-static initialization of a flexible array member". They are named static objects now; the table `D_800EB8CC` is the same. |
+| 4 | `linker/symbols.jm1.ld` | 47 old splat names the assembly uses, mapped to today's C names (`D_8010296C = entity_list_1`, `D_8013F448 = sin_lut`, `func_800E0F94 = gbuffer_get_current`, `func_800DEAD4 = GetTPage`, ...). Found in the git history and from where each name sits among the C files' functions. |
+| 4 | `linker/symbols.title.ld` | `D_800EBA78 = D_800EBA7C - 4`: the C code decompresses `D_800EBA78 + 4` (the title's picture). `D_801A0FD8` as a fixed address past the title's bss. |
+| 4 | `src/jm1/38F38.c` | `INCLUDE_ASM` of `func_800E8AEC`: `func_800E8A40` branches into it (`bltzal`); both were one file before. |
+| 4 | `src/title/local_asm.c` | Original functions that the title's original data tables still point at, and `D_800E7FA0` (the `jt` pointer word the assembly reads). |
+| 5 | `tools/buildfix/regen.py` | Regenerates the missing assembly and data from your disc (below). |
+
+## What `tools/buildfix/regen.py` does
+
+1. Decompresses `execs/us_jm1.pex` and `execs/us_title.pex` with knife.
+2. Runs splat with every `INCLUDE_ASM` name as a function symbol, with `src/` hidden from splat. With `src/`
+   present splat only writes the functions the segment's own C file includes, so everything that had moved
+   to `math.c`, `weapons/`, `world1/` and so on was missing. Result: all 868 JM1 functions and the 10 TITLE
+   functions the C files include.
+3. Converts splat's output to this repo's `macro.inc` (no `nonmatching`/`endlabel`, no `glabel` for the
+   function itself since `INCLUDE_ASM` defines it, jump-table labels global because
+   `asm/jm1/data/800.rodata.s` refers to them).
+4. **JM1:** links, and pulls in whatever is still undefined from the original executable: functions into
+   `src/jm1/local_asm.c`, data into `src/jm1/local_data.s`, pointers in that data written as symbols. That is
+   about 75 functions of the old libgpu/libetc copy, with its two driver tables (`0x80100584`, `0x8010143C`).
+5. **TITLE:** adds splat's rodata and data, drops the blocks the C files now define, adds the labels the C
+   files reference, turns raw pointers into symbols, drops jump tables of functions that are C now, and
+   renames the labels inside `bigone` that the C files now define (those old copies are dead code).
+
+Checked from a clean checkout: TITLE and GAMEOVER come out byte-identical to the build that was tested;
+JM1 links (the same size; its regenerated pieces are in a different order).
+
+## Build (US disc)
+
+```sh
+git checkout build-fixes
+./dump_us.sh
+cp build/disc_us/JM1/MAIN.PEX execs/us_jm1.pex    # the first JM1 build overwrites that file
+pip install splat64                               # 0.50 was used
+export CROSS=mipsel-linux-gnu-                    # optional
+python3 mkninja.py us
+ninja build/knife
+python3 tools/buildfix/regen.py
+python3 mkninja.py us
+ninja build/disc_us/SCUS_941.03 build/disc_us/TITLE.PEX build/disc_us/JM1/MAIN.PEX build/disc_us/GAMEOVER.PEX
+```
+
+## Status (tested in pcsxr with its built-in BIOS)
+
+- All four programs build and link.
+- The disc boots: the Sony screen, then TITLE starts and plays the intro movie.
+- **Open:** pressing Start during the intro movie with the rebuilt TITLE ends at `PC = 0` inside main's DMA
+  interrupt dispatcher (a NULL DMA callback). The original TITLE with the rebuilt main skips to the menu
+  fine, so the fault is in TITLE. Slowed down by breakpoints it reaches its menu loop, so it looks timing-related.
+- JM1 and GAMEOVER are not tested in an emulator yet (pcsxr's built-in BIOS also goes black after
+  "Game Start" with the original disc; a real BIOS is needed).
+- The rebuilt TITLE is `0x18800` bytes against the original `0x15000`: it no longer fits its place on the
+  disc, so a test disc has to move it (the game finds files through the ISO directory, so that works).
+
+---
+
 # Project Aloha
 
 A (nonmatching) decompilation of Jumping Flash on PSX.
