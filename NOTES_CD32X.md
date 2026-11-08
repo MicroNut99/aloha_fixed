@@ -135,3 +135,9 @@ Its parts (0x800C2AD4 builds each): three routines - +36 = 0x800C183C, +68 = 0x8
 table at 0x800B0580) whose cases set the next state and call routines; it reads the part's number (+252) and
 a shared bit mask of the parts (global at 0x800FF3FC, a bit per part: cleared as a part is lost). Twenty-four
 states to read, one by one.
+
+The 24 states, by what they set (the component state at +0 of the component, its counter at +4, the entity's
++262 = the attack pattern through 0x800C10E8): 0-1 setup; 2-3 pattern 4, 64 frames; 4-6 a pause; 7-9 pattern 1,
+160 frames (+260 = 88); 10-11 wait 76; 12-15 pattern 2, 96 then 156 frames; 16 the part lost; 18-21 pattern 3,
+96 then 132 frames (+260 = 60); 22-23 wait 76. Each pattern's moves are in 0x800C1300 / 0x800C1508 /
+0x800C1570 / 0x800C0008 (not read yet).
