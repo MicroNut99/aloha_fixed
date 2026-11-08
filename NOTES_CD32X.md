@@ -171,3 +171,25 @@ switches on the state (23 states, jump table 0x800B03A0): state 0 waits 80 frame
 player's distance (0x800CA744; 96, 128, 192) and angle (-127, -512, -1024): states 5, 7, 9, 12 or 22. The states' own
 moves are not read yet.
 
+
+## Stage time limits
+
+The level timer (`func_800EB354` sets it, clamped to 0..0x34BBF, in 1/60 s; `func_800EB3A0` the second one)
+is started from `func_800E3CD8`: the program's second stage-table accessor (JM1 0x800B0C58: `li 3; div; mfhi`,
+row 0x800FE510, 8 bytes a stage: the stage's record, its bonus sublevel's) gives a record whose +192 is the limit.
+First-round worlds: 10:00 a stage (World 2 stage 2: 5:00), 1:00 a bonus sublevel. Extra worlds (JMnB): 3:00-5:00.
+
+## Pickups (type 0x44)
+
+Spawn byte 0 is the kind, 1-10 (kept at +74; its mesh is the pickup mesh + kind). Taken (`func_800D207C` ->
+`func_800D156C(kind)`, a switch on kind - 1, jump table 0x800B07C0): 1 a heart back (health routines
+0x800EBE5C, sound 0x1D00); 2 `func_800EC058(1)` (more health) and the hearts back (0x1D00); 3 `func_800ED60C`
+(sets 0x80102EFC: the time stop, timestop.c); 4 `func_800EDDBC` (sets 0x80102F3C: "seizure.c", a flash);
+5 `func_800ED344(1)` (a life, sound 0x1E00); 6 `func_800EB3EC(0x708)` (30 seconds more, sound 0x1C00); 7-10
+`func_800ED26C` (a special weapon). Kind 5 is taken once; the others come back. The text shown with each is
+message 0x3900-0x3D00.
+
+## Movies
+
+`MOVIE/*.STR`: 512 x 208, 15 a second, XA sound 37,800 Hz stereo. Their MDEC frames say version 1 in the frame
+header (+6); the bitstream is version 2's (ffmpeg decodes them once that word says 2).
