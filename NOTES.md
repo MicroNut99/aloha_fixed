@@ -15,6 +15,8 @@ sets of symbol files, one for the linker and one for Splat. I'm
 already trying to merge all of the linker scripts into a single
 shared one anyway.
 
+See also NOTES_CD32X.md: the entity file, layout B, sound effect numbers and other findings from the CD32X port.
+
 ## Exectuables
 
 ```
