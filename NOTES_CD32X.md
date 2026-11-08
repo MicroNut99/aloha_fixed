@@ -129,3 +129,9 @@ each: wrappers) - calls 0x800C21C8 and 0x800E1678 / 0x800E16B0 / 0x800DF564 / 0x
 globals at 0x800FF3D0-0x800FF414, and calls 0x800C2AD4 in a loop (counting s2 up): it builds the boss out of
 several parts, each an entity of its own. The behaviour is in those parts' routines (from 0x800C2AD4) and the
 globals they share - the next thing to read.
+
+Its parts (0x800C2AD4 builds each): three routines - +36 = 0x800C183C, +68 = 0x800C21E8, +52 = 0x800C29DC.
+0x800C183C is a hand-written state machine, not a script runner: a switch on the component state (0-23, jump
+table at 0x800B0580) whose cases set the next state and call routines; it reads the part's number (+252) and
+a shared bit mask of the parts (global at 0x800FF3FC, a bit per part: cleared as a part is lost). Twenty-four
+states to read, one by one.
