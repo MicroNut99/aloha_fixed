@@ -79,3 +79,26 @@ The kiwi's tables (not named with an address in kiwi.c): personalities at 0x800F
 Spawn data for both (`FrogSpirit` / `KiwiSpirit`, little-endian): s16 health, u16 points, s16 damage (kiwi: unk),
 s8 drop kind, u8 personality. Kiwi actions: 1 run (32-47 frames), 3 hop (up 4-7 units), 4 step (4-7 frames);
 the physics clears the action when it is done and the script waits for that.
+
+## World 1's enemy classes (US JM1/MAIN.PEX)
+
+`D_800FD454` points at one class list per stage (0x800FD400, 0x800FD430, 0x800FD44C); entity type 0x80 + n is
+entry n. A class: resources, a second table, class_ctor, ctor. A scripted class's ctor loads four data addresses
+(the third its personality table, the fourth its label table) and sets four routines (behaviour = the script
+runner, physics, interaction, one more):
+
+| Stage / class | ctor | personalities / labels | behaviour, physics, interaction |
+|---|---|---|---|
+| 1 / 0 frog | 0x800B1D78 | 0x800FE760 / 0x800FE710 | 0x800B0CCC, 0x800B13BC, 0x800B1788 |
+| 1 / 1 kiwi | 0x800B2FF0 | 0x800FEAC0 / 0x800FEA50 | 0x800B1F94, 0x800B25E4, 0x800B2A0C |
+| 1 / 2 | 0x800B4B14 | 0x800FECBC / 0x800FEC80 | 0x800B390C, 0x800B4114, 0x800B42D4 |
+| 1 / 3 | 0x800B6430 | 0x800FEF20 / 0x800FEEDC | 0x800B558C, 0x800B5ACC, 0x800B5E80 |
+| 1 / 5 (shared with stage 2 / 1) | 0x800B7B58 | 0x800FF264 / 0x800FF214 | 0x800B6D28, 0x800B72F0, 0x800B7574 |
+| 2 / 0 | 0x800B9068 | 0x800FF44C / 0x800FF418 | 0x800B7D5C, 0x800B8484, 0x800B8710 |
+| 2 / 2 | 0x800BBD9C | 0x800FF9C4 / 0x800FF8D0 (five data addresses) | 0x800BB300, 0x800BB5D4, ... |
+| 2 / 3 | 0x800BD710 | 0x800FFBA0 / 0x800FFB7C | 0x800BC3F0, 0x800BCEB4, 0x800BD158 |
+| 3 / 0 the boss | 0x800C4DE8 | 0x801001F0 / 0x8010024C | 0x800C3798, 0x800C40A4, 0x800C44A8 |
+
+Classes 1/4, 1/7-10, 2/4 and 2/5 load no script tables (simpler things: scenery, items, effects). Each scripted
+class has its own copy of the script runner: opcodes 0-9 are expected to match frog.c's, the class's own ones
+(10 and up) are read from its behaviour routine.
