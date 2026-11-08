@@ -116,3 +116,8 @@ a destination; volume, pan, play = its sound; an operand and a branch = compare 
 speed / action; player + angle + turn + branch = facing the player within an angle.
 Scripted classes found: JM1-JM2B 10 each, JM3/JM3B 10 (stages 1-2), JM4/JM4B 11, JM5/JM5B 5 (stage 1),
 JM6/JM6B 6 (stages 1 and 3).
+
+Not scripted (their ctors store no script pointer or label table; they install routines of their own - hand-
+written state machines): JM3's boss (stage 3 class 0, ctor 0x800C2CF8), JM5's stage 2 classes (class 0 ctor
+0x800CAB64; JM5 has no stage 3 list), JM6's stage 2 class 0 (ctor 0x800C0D98), and a few small classes (JM3
+stage 1/2 class 6, JM5 stage 1 classes 5 and 7: one data address and one or two routines - effects or items).
