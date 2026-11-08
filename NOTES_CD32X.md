@@ -141,3 +141,9 @@ The 24 states, by what they set (the component state at +0 of the component, its
 160 frames (+260 = 88); 10-11 wait 76; 12-15 pattern 2, 96 then 156 frames; 16 the part lost; 18-21 pattern 3,
 96 then 132 frames (+260 = 60); 22-23 wait 76. Each pattern's moves are in 0x800C1300 / 0x800C1508 /
 0x800C1570 / 0x800C0008 (not read yet).
+
+The pattern routines: 0x800C1300 (every pattern) steers the part at the player - an angle (0x800C9C34), a turn of
+at most 0x20 (0x800CC448 / 0x800CC6C8, stored at +164) - and eases its velocity (+104 x, +112 z, +120 y; through
+0x800D86CC). 0x800C1508 (pattern 1) counts +260 down and fires through 0x800C0548, the counter set to 12 after
+each shot (88 before the first: state 8). 0x800C1570 (pattern 3) throws one object up at -800 through 0x800C0A98
+(+260 = 60 before it: state 20). 0x800C0008 (state 6, the end of pattern 4) an effect through 0x800E17F0.
