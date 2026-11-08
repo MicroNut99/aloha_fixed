@@ -25,7 +25,7 @@ then    per cell: u16 count, count x 32 bytes:
 | 0x43 | the player's start | 1 in stage 1 (stage 2 has none) |
 | 0x44 | pickups | many |
 | 0x80 + n | enemy: class n of the stage's EntityClass list (JM1: `D_800FD454[stage]`, frog = 0, kiwi = 1) | |
-| 0x04-0x0A | not identified (World 1 has 0x0A x 32 only there) | |
+| 0x00-0x3F | class n of the stage's list, like 0x80 + n: World 6's stage 2 and 3 bosses are type 0x00; World 1's 0x0A (x 32, stage 1) is its class 10, scenery | |
 
 Stage 3 (the boss stage) holds one entity, type 0x80: the boss.
 
@@ -105,8 +105,10 @@ class has its own copy of the script runner: opcodes 0-9 are expected to match f
 
 ## Finding the enemy classes in any world's program
 
-The same layout holds in all twelve MAIN.PEX (JM1 ... JM6B): a row of three pointers to the stage class lists
-(two in JM5/JM5B: no list for stage 3), each an array of class records ending in 0xFFFFFFFF; a record's +8 the
+The same layout holds in all twelve MAIN.PEX (JM1 ... JM6B): a row of three pointers to the stage class lists, read
+by the program's first table accessor (`li 3; div; mfhi; lui / addiu`: JM1's `D_800FD454[n % 3]` at 0x800B0AD4; JM5's
+row 0x8010212C), each an array of class records ending in 0xFFFFFFFF (0 = an unused class number: JM5 stage 1's
+class 2); a record's +8 the
 class_ctor, +12 the ctor. A scripted class's ctor stores the script pointer at entity +304 (a constant: one
 script, as World 1's boss; or looked up in the personality table) and the label table at +308. Its script
 runner (the first routine it sets) is a switch on the vm state (li max; sltu; jump table in the .rodata at the
@@ -114,13 +116,15 @@ start of the program); opcodes 0-9 are shared, 10 and up the class's own. Their 
 three calls (player, vector length, square root) and a branch = a distance test; two random numbers stored =
 a destination; volume, pan, play = its sound; an operand and a branch = compare the action; a bare operand =
 speed / action; player + angle + turn + branch = facing the player within an angle.
-Scripted classes found: JM1-JM2B 10 each, JM3/JM3B 10 (stages 1-2), JM4/JM4B 11, JM5/JM5B 5 (stage 1),
-JM6/JM6B 6 (stages 1 and 3).
+Scripted classes found: JM1-JM2B 10 each, JM3/JM3B 10 (stages 1-2), JM4/JM4B 11, JM5/JM5B 9 (stages 1-2),
+JM6/JM6B 6 (stages 1 and 3).  (Searching for any row of list pointers instead finds a false one in JM5, one list
+off: its stage 2's classes then look like stage 1's and stage 3 seems to have none.)
 
 Not scripted (their ctors store no script pointer or label table; they install routines of their own - hand-
-written state machines): JM3's boss (stage 3 class 0, ctor 0x800C2CF8), JM5's stage 2 classes (class 0 ctor
-0x800CAB64; JM5 has no stage 3 list), JM6's stage 2 class 0 (ctor 0x800C0D98), and a few small classes (JM3
-stage 1/2 class 6, JM5 stage 1 classes 5 and 7: one data address and one or two routines - effects or items).
+written state machines): JM3's boss (stage 3 class 0, ctor 0x800C2CF8), JM5's boss (stage 3 class 0, ctor
+0x800CAB64), JM6's stage 2 class 0 (ctor 0x800C0D98: World 6's stage 2 is a boss stage, its one entity), and a few
+small classes (JM3 stage 1/2 class 6, JM5 stage 1 classes 5 and 7: one data address and one or two routines -
+effects or items).
 
 ### JM3's boss (stage 3 class 0, ctor 0x800C2CF8): where its logic is
 
@@ -147,3 +151,23 @@ at most 0x20 (0x800CC448 / 0x800CC6C8, stored at +164) - and eases its velocity 
 0x800D86CC). 0x800C1508 (pattern 1) counts +260 down and fires through 0x800C0548, the counter set to 12 after
 each shot (88 before the first: state 8). 0x800C1570 (pattern 3) throws one object up at -800 through 0x800C0A98
 (+260 = 60 before it: state 20). 0x800C0008 (state 6, the end of pattern 4) an effect through 0x800E17F0.
+
+### JM5's boss (stage 3 class 0, ctor 0x800CAB64)
+
+The spawn's health (+8, 14000) goes to a global (0x80107B68, also 0x80107B60), its points x 10 to 0x80107B78. The
+ctor builds 15 parts (0x800C0120 each, routines 0x800BFD60 / 0x800BFE2C / 0x800BFFB0), placed by a table at
+0x8010485C (8 bytes each: s16 x, y, z, 0): the middle, the 8 corners at +-276, the 6 face middles at +-264 - a block
+of 15; part 0 is raised 192, the others 72. The boss's own routine (+20 = 0x800C9824) is a 9-state machine (jump
+table 0x800B071C): 0-1 setup (0x800C1404); 2 the fight, until the health global is 0, then the 15 part slots (0x801098D0,
+36 bytes each) cleared; 3 the parts placed again in one of three forms (a global at 0x80107B48, 0-2: each part
+through 0x800BF9A8, which turns its offset (0x800D1300), then 0x800BFA60 / 0x800BFBD0 / 0x800BFB18 - the form's
+heights); 4 wait for the 15, a sound (0x4A16, 0x800D2E38); 5 the form's own routine (0x800C41F8 / 0x800C8958 /
+0x800C62C0, not read); 6-8 as 2-4 again.
+
+### JM6's stage 2 boss (class 0, ctor 0x800C0D98)
+
+Routines: +20 = 0x800BF19C, +36 = 0x800BFE04, +68 = 0x800C0598, +52 = 0x800C0B74. 0x800BF19C counts +268 down and
+switches on the state (23 states, jump table 0x800B03A0): state 0 waits 80 frames; state 2 picks the next state by the
+player's distance (0x800CA744; 96, 128, 192) and angle (-127, -512, -1024): states 5, 7, 9, 12 or 22. The states' own
+moves are not read yet.
+
