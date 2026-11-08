@@ -87,9 +87,10 @@ and formats only (no game code or data), in [`NOTES_CD32X.md`](NOTES_CD32X.md); 
 | Ground textures with colour value 0 drew as black | Colour value 0 is see-through; World 6 and World 2-2 have no ground plane at all |
 | `sfx_play`'s effect numbers were opaque | High byte the VAB program, low byte the bank (`0x00` the shared `SYS_SE.VAB`, `0x1n` the world's own) and tone; the player's jumps, landing, hurt, points and the "enemy beaten" sound identified from their callers |
 | The kiwi's script tables had no address in `kiwi.c`; the enemy classes of other stages and worlds were not mapped | The kiwi's tables found; every world's stage class lists, each scripted class's script and label tables, and what its own opcodes do - found the same way in all twelve `MAIN.PEX` |
-| World 3's boss, World 5's stage 2 and World 6's stage 2 boss did not fit the scripted pattern | They are hand-written state machines: World 3's boss is several parts, each a 24-state routine; its patterns, timings and attack routines are mapped |
+| World 3's boss, World 5's boss and World 6's stage 2 boss did not fit the scripted pattern | They are hand-written state machines: World 3's boss is several parts, each a 24-state routine (patterns, timings and attacks mapped); World 5's is 15 blocks from a table of offsets, re-formed into three forms; World 6's stage 2 boss picks its moves by distance and angle |
+| World 5's enemy classes seemed to be on the wrong stages, and World 6's stage 2 and 3 bosses had no class | The class lists are read through the game's own accessor (searching for a row of pointers finds a false row in World 5, one list off); an entity type under 0x40 is a class number (those two bosses are type 0x00) |
 
-Still open there: the physics routines behind each class's actions, World 5's and World 6's unscripted bosses,
+Still open there: the physics routines behind each class's actions, the moves of World 5's three forms and World 6's stage 2 boss,
 and the per-world sound banks.
 
 ---
