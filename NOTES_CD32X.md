@@ -121,3 +121,11 @@ Not scripted (their ctors store no script pointer or label table; they install r
 written state machines): JM3's boss (stage 3 class 0, ctor 0x800C2CF8), JM5's stage 2 classes (class 0 ctor
 0x800CAB64; JM5 has no stage 3 list), JM6's stage 2 class 0 (ctor 0x800C0D98), and a few small classes (JM3
 stage 1/2 class 6, JM5 stage 1 classes 5 and 7: one data address and one or two routines - effects or items).
+
+### JM3's boss (stage 3 class 0, ctor 0x800C2CF8): where its logic is
+
+The ctor installs two short routines - entity +36 = 0x800C2C4C, +68 = 0x800C2CC8 (a few branches and one call
+each: wrappers) - calls 0x800C21C8 and 0x800E1678 / 0x800E16B0 / 0x800DF564 / 0x800DF530, keeps its state in
+globals at 0x800FF3D0-0x800FF414, and calls 0x800C2AD4 in a loop (counting s2 up): it builds the boss out of
+several parts, each an entity of its own. The behaviour is in those parts' routines (from 0x800C2AD4) and the
+globals they share - the next thing to read.
