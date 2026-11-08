@@ -73,3 +73,9 @@ low 4 bits the tone. JM1/MAIN.PEX has 80 calls to it. Those in named functions:
 Confirmed on the US disc: the frog's personality table at 0x800FE760 (three pointers: 0x800FE5BC, 0x800FE638,
 0x800FE6CC) and its label table at 0x800FE710 (`frog.c`); the scripts decode with frog.c's opcodes 0-15.
 `e_frog_physics` (`func_800B13BC`), which turns the frog's actions into movement, is still assembly.
+
+The kiwi's tables (not named with an address in kiwi.c): personalities at 0x800FEAC0 (0x800FE898 the runner,
+0x800FE974 the walker, 110 words apart), labels at 0x800FEA50 (28; slots outside the scripts are unused).
+Spawn data for both (`FrogSpirit` / `KiwiSpirit`, little-endian): s16 health, u16 points, s16 damage (kiwi: unk),
+s8 drop kind, u8 personality. Kiwi actions: 1 run (32-47 frames), 3 hop (up 4-7 units), 4 step (4-7 frames);
+the physics clears the action when it is done and the script waits for that.
