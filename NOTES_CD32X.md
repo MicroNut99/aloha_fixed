@@ -102,3 +102,17 @@ runner, physics, interaction, one more):
 Classes 1/4, 1/7-10, 2/4 and 2/5 load no script tables (simpler things: scenery, items, effects). Each scripted
 class has its own copy of the script runner: opcodes 0-9 are expected to match frog.c's, the class's own ones
 (10 and up) are read from its behaviour routine.
+
+## Finding the enemy classes in any world's program
+
+The same layout holds in all twelve MAIN.PEX (JM1 ... JM6B): a row of three pointers to the stage class lists
+(two in JM5/JM5B: no list for stage 3), each an array of class records ending in 0xFFFFFFFF; a record's +8 the
+class_ctor, +12 the ctor. A scripted class's ctor stores the script pointer at entity +304 (a constant: one
+script, as World 1's boss; or looked up in the personality table) and the label table at +308. Its script
+runner (the first routine it sets) is a switch on the vm state (li max; sltu; jump table in the .rodata at the
+start of the program); opcodes 0-9 are shared, 10 and up the class's own. Their handlers sort by what they do:
+three calls (player, vector length, square root) and a branch = a distance test; two random numbers stored =
+a destination; volume, pan, play = its sound; an operand and a branch = compare the action; a bare operand =
+speed / action; player + angle + turn + branch = facing the player within an angle.
+Scripted classes found: JM1-JM2B 10 each, JM3/JM3B 10 (stages 1-2), JM4/JM4B 11, JM5/JM5B 5 (stage 1),
+JM6/JM6B 6 (stages 1 and 3).
