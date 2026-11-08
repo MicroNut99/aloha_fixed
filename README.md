@@ -73,6 +73,25 @@ ninja build/disc_us/SCUS_941.03 build/disc_us/TITLE.PEX build/disc_us/JM1/MAIN.P
 - The rebuilt TITLE is `0x18800` bytes against the original `0x15000`: it no longer fits its place on the
   disc, so a test disc has to move it (the game finds files through the ISO directory, so that works).
 
+## Findings for the Jumping Flash CD32X port (`NOTES_CD32X.md`)
+
+Work on the Sega CD + 32X port ([MicroNut99/JumpingFlash_CD32X](https://github.com/MicroNut99/JumpingFlash_CD32X))
+turned up things that were misread, unknown or open in this decompilation. They are written up, with addresses
+and formats only (no game code or data), in [`NOTES_CD32X.md`](NOTES_CD32X.md); nothing in `src/` changes.
+
+| What was broken or unknown | What was found or fixed |
+|---|---|
+| Several stages' meshes looked unreadable: all of World 6's stage 1, World 6 Extra's sublevel and boss stage, three bonus sublevels | The per-mesh counts are stored as count - 1, so a count of 0 is `0xFFFFFFFF`. Read as a 32-bit number + 1 (wrapping to 0) they all load |
+| The boss stages and stage 2 of worlds 3-6 had no object placement where NOTES.md expects it (`7/1`) | "Layout B": no `5/x`, `7/x`, `8/x` files; meshes `4/2`, objects `6/1`, entities `6/0` |
+| Level section 0 was "entities and entity spawners (I think?)" | Its layout (a 32 x 32 grid of cells, 32-byte records: the spawn and a working copy) and the types: `0x40` carrots, `0x41` exit, `0x42` bonus things, `0x43` start, `0x44` pickups, `0x80 + n` enemy class n |
+| Ground textures with colour value 0 drew as black | Colour value 0 is see-through; World 6 and World 2-2 have no ground plane at all |
+| `sfx_play`'s effect numbers were opaque | High byte the VAB program, low byte the bank (`0x00` the shared `SYS_SE.VAB`, `0x1n` the world's own) and tone; the player's jumps, landing, hurt, points and the "enemy beaten" sound identified from their callers |
+| The kiwi's script tables had no address in `kiwi.c`; the enemy classes of other stages and worlds were not mapped | The kiwi's tables found; every world's stage class lists, each scripted class's script and label tables, and what its own opcodes do - found the same way in all twelve `MAIN.PEX` |
+| World 3's boss, World 5's stage 2 and World 6's stage 2 boss did not fit the scripted pattern | They are hand-written state machines: World 3's boss is several parts, each a 24-state routine; its patterns, timings and attack routines are mapped |
+
+Still open there: the physics routines behind each class's actions, World 5's and World 6's unscripted bosses,
+and the per-world sound banks.
+
 ---
 
 # Project Aloha
