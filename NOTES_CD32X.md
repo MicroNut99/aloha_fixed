@@ -152,6 +152,19 @@ at most 0x20 (0x800CC448 / 0x800CC6C8, stored at +164) - and eases its velocity 
 each shot (88 before the first: state 8). 0x800C1570 (pattern 3) throws one object up at -800 through 0x800C0A98
 (+260 = 60 before it: state 20). 0x800C0008 (state 6, the end of pattern 4) an effect through 0x800E17F0.
 
+0x800C1300 turns the part's ring toward an angle given in a1 (0 or 0x800 of 4096) at 0x40 a frame, returning
+non-zero until it is there: pattern 4 (states 2-3) turns it half round, patterns 1 and 2 (states 8, 13) back to 0.
+Pattern 2 is a slam: 96 frames rising, then a 156-frame animation; 36 frames into it a bit in 0x8010F404 is set for
+the part, the screen is shaken (0x800D1540 points 0x8010CA94 at a shake table) and sound 0x2F17 plays.
+
+Each pattern also starts its hit zones (0x800C10E8, called with two lists): one child entity per entry of the
+first list (update 0x800C0CDC, interaction 0x800C104C; +264 the entry, +268 the second list, +272 the boss part).
+The child follows a keyframed path - positions interpolated between the boss's animation frames (+72 / +86) - and
+is harmful only in the frame ranges of the second list (+100). The lists are pointers at 0x8010D000-0x8010D01C
+(pattern 4: 0x8010D008 / 0x8010D01C; 1: 0x8010D010; 2: 0x8010D014; 3: 0x8010D018). Nothing in JM3's program
+writes them: they are filled at run time from the stage's data, so the exact moves of the attacks are there,
+not in the code.
+
 ### JM5's boss (stage 3 class 0, ctor 0x800CAB64)
 
 The spawn's health (+8, 14000) goes to a global (0x80107B68, also 0x80107B60), its points x 10 to 0x80107B78. The
@@ -164,13 +177,93 @@ through 0x800BF9A8, which turns its offset (0x800D1300), then 0x800BFA60 / 0x800
 heights); 4 wait for the 15, a sound (0x4A16, 0x800D2E38); 5 the form's own routine (0x800C41F8 / 0x800C8958 /
 0x800C62C0, not read); 6-8 as 2-4 again.
 
+The three forms (0x800C41F8 / 0x800C8958 / 0x800C62C0 build the form's entity: +36 its update, +304 / +308 its
+animation sequences, pairs of (animation, frames) ending in -1, e.g. 0x80104CE8 / 0x80104DCC for form 1):
+
+- **Form 1** (update 0x800C3570, 14 states, jump table 0x800B0534): walks at the player, turning 0x18 of 4096 a
+  frame, for 114 + random / 8 frames, a step sound (0x4B10) every 54 frames; then looks up (+156 = -64) for 40
+  frames and fires 4 shots 32 frames apart (0x800C30B4: from 0x234 in front of it, sound 0x4B12); again. States
+  10-13: its hit and end reactions (animations 4 / 5, 48 frames; 0x800BF944).
+- **Form 2** (update 0x800C7B40, 22 states, jump table 0x800B067C): hovers about a target height +276
+  (0x800C74E8: 0x400 a frame toward it, at most 0xC000). After each animation (state 3 switches on +252) it goes
+  to: a rest (64 + random / 8 frames); a drop on the player (64 frames rising and turning, then gravity 0x1800 to
+  at most 0x30000; 0x800C7758: 30 damage to a player under it; landing: sound 0x4B11, the screen shaken,
+  a bounce up 3); bombs from high (+276 = -2560; 2 + random / 32 bombs 24 frames apart, 0x800C7600: dropped from
+  0xC0 under it); a chase (288 frames, turn 0x30, speed up 2048 a frame to 0xE000, sound 0x4A1B every 96).
+- **Form 3** (update 0x800C5504, 12 states, jump table 0x800B05DC): rises (3072 a frame, to at most -8192) and
+  spins up for 64 frames (+152 / +156 the turn rates, random accelerations clamped to +-0x72000), spins 320
+  frames throwing blocks (0x800C4F18: every 4 frames, a chance of 240 in 256), a spin sound (0x4B13) as fast as
+  it turns, then spins down and rests 48.
+
+The order in which form 2 picks its moves is set by its animation sequence (+304), not by code.
+
 ### JM6's stage 2 boss (class 0, ctor 0x800C0D98)
 
 Routines: +20 = 0x800BF19C, +36 = 0x800BFE04, +68 = 0x800C0598, +52 = 0x800C0B74. 0x800BF19C counts +268 down and
 switches on the state (23 states, jump table 0x800B03A0): state 0 waits 80 frames; state 2 picks the next state by the
-player's distance (0x800CA744; 96, 128, 192) and angle (-127, -512, -1024): states 5, 7, 9, 12 or 22. The states' own
-moves are not read yet.
+player's distance (0x800CA744; 96, 128, 192) and angle (-127, -512, -1024): states 5, 7, 9, 12 or 22.
 
+The states: 3 waits distance / 8, then back to 2; 5 and 7 give its physics (+36) action 4 or 1 (+258), then wait
+distance / 4 + 64 (or + 32); 9, 12, 13 actions 2 and 5, waiting for +256 to match and then for it to be 0. Its
+physics' jumps: up at 16 a frame (lui 0xFFFF) and at 64 (0xFFFC). States 15-22 call its helpers: it goes to its
+spot (0x800C99C0: x 0, z 0x83E), leaps (action 2), then state 22 calls 0x800BE964 every 64 frames, four times, and
+state 19 sets +268 = 600 (the wait before it does so again).
+
+The helper (0x800BE964 makes one; at most 4 at once, counted in 0x8010CAEC): it appears at (0, 0, 0x81E), +92 = 500,
+update 0x800BE220: 8 frames still; a jump (sound 0x4C12) up at (its distance to the player + 384) / 16 a frame,
+12 a frame forward (+172), gravity 0x1000 a frame (+132), the fall at most 0x18000; off a wall a bounce up 3; on the
+ground 12 frames (sound 0x0700), then again.
+
+
+## The stage-end tally (JM1)
+
+0x800D5190 (8 states, jump table 0x800B0844) counts three amounts into the score in turn (states 3-5, each through
+0x800D5038: a step every other frame, the step 10 times bigger after 10 steps when the rest divides by it, at most
+99999; sound 0x2C00 every 3 frames; 0x1F00 at the end). The amounts are worked out first (0x8011F818 + 8 / + 20 / + 32):
+
+| | routine | amount |
+|---|---|---|
+| time | 0x800DB798 | the time left in seconds, rounded up, x 50 |
+| hearts | 0x800DB800 | the player's +92 x 100 |
+| bonus | 0x800DB6B4 | below; at most 9,999,999 |
+
+The bonus, from globals the stage start clears (0x800DB670):
+
+| global | set by | meaning | in the bonus |
+|---|---|---|---|
+| 0x80102B8C | 0x800DB8B8, from `give_points` (0x800EB16C) | the stage's own points (A) | 5 x A if 0x80102B6C is 0; 2 x A if 0x80102B74 is 0 |
+| 0x80102B6C | 0x800DB87C, from 0x800DC238 (a hit taken: sound 0x0D00) | hurt | |
+| 0x80102B74 | 0x800DB890, from 0x800FD150 (a special weapon fired) | special used | |
+| 0x80102B84 | 0x800DB8D8, from 0x800D3070 (a jewel taken) | the jewels' points (B) | 100 x B if 0x80102B7C is 0 |
+| 0x80102B7C | 0x800DB8A4, from 0x800D2FCC (a jewel left 720 frames) | a jewel missed | |
+| 0x80102B94 | 0x800DB8F8, from 0x800D2534 (a carrot taken: its id, spawn +8) | the carrots' order: id = count -> count + 1, else -1 | 30,000 if it is 4 |
+| 0x80102B9C | 0x800DB928, from 0x800ED2C4 (the special weapon list) | 10,000 the first time the three held are the same weapon (a bit per weapon) | added |
+
+A carrot (spawn type 0x40, ctor 0x800D2618; the type table at 0x800B07A8: 0x40 carrot, 0x41 0x800D2A8C, 0x42 0x800D3D28,
+0x43 0x800D45C4, 0x44 the pickups 0x800D2184) gives no points of its own: a message (0x800EE26C) and, at the fourth,
+sound 0x2300 and voice 0x3F00.
+
+## Jewels from beaten enemies (JM1 0x800D1CBC)
+
+When an enemy is beaten: a random number under 65 - nothing (or an item: 0x800D1868, at most 11 at once); else a luck
+count (0x801029DC) goes up by 32 + a random 0-47; while it stays under 256 the enemy bursts into 3 + random / 64 small
+jewels and random / 128 big ones (0x800D35A8, each one 0x800D3378: thrown up at 20 a frame in a random direction);
+over 256 the count wraps (& 0xFF). A jewel is worth 100, or 500 (+74 = 2); taken: sound 0x1F00, its points, and
+0x800DB8D8. One left 720 frames is gone, and 0x800DB8A4 is set.
+
+## Special weapons (JM1)
+
+From the ctors: the cherry bomb (0x800FB4C8) three at a use (slti 3), each +92 = 300 frames, the blast sound 0x1600;
+the twisters (0x800FCF30) and the rockets (0x800FA0BC) 10 shots (+252 under 10), one every 8 frames (+254 = 8), at
+most 16 out, the twisters' angle spread from 0x8010315C; the roman candle (0x800FC40C) two (0x800FC244 with +-1),
+sound 0x1800.
+
+## Classes that only make a sound, and two that do nothing
+
+JM4 stage 2 class 7 (ctor 0x800C575C) has no model: its update (0x800C55B0) counts the spawn's word +8 down and
+plays 0x3E10 at its place, then keeps the voice's volume by the distance. The same kind: JM1's classes 8-10 (0x0D10,
+0x0E10, 0x0C10) and JM5 stage 2 class 7 (0x4911). JM3 stage 2 class 5 (ctor 0x800BE034) frees itself at once.
+JM5 stage 2 class 5 (ctor 0x800BDC74) is scenery: model 0x69, turned through the keyframes at 0x80104600.
 
 ## Stage time limits
 

@@ -90,8 +90,14 @@ and formats only (no game code or data), in [`NOTES_CD32X.md`](NOTES_CD32X.md); 
 | World 3's boss, World 5's boss and World 6's stage 2 boss did not fit the scripted pattern | They are hand-written state machines: World 3's boss is several parts, each a 24-state routine (patterns, timings and attacks mapped); World 5's is 15 blocks from a table of offsets, re-formed into three forms; World 6's stage 2 boss picks its moves by distance and angle |
 | World 5's enemy classes seemed to be on the wrong stages, and World 6's stage 2 and 3 bosses had no class | The class lists are read through the game's own accessor (searching for a row of pointers finds a false row in World 5, one list off); an entity type under 0x40 is a class number (those two bosses are type 0x00) |
 
-Still open there: the physics routines behind each class's actions, the moves of World 5's three forms and World 6's stage 2 boss,
-and the per-world sound banks.
+| World 5's three forms and World 6's stage 2 boss's moves were not read | Read state by state: form 1 walks and fires four, form 2 rests / drops on you / bombs / chases, form 3 spins and throws blocks; World 6's stage 2 boss leaps, goes to its spot and calls up to four hopping helpers every 64 frames |
+| World 3's boss attacks looked like code | Each pattern starts hit zones that follow keyframed paths from lists filled at run time (0x8010D000-0x8010D01C): the attacks' exact moves are stage data, not code. Pattern 2's slam (36 frames in, the screen shaken) is in the code |
+| The stage-end score screen was unknown | The tally (0x800D5190): 50 points a second left, 100 a heart, and a bonus from seven globals - 5 x the stage's points if never hit, 2 x if no special fired, 100 x the jewels' points if none missed, 30,000 for the carrots in order, 10,000 for three of one special |
+| Beaten enemies' drops were unknown | Jewels (0x800D1CBC): a luck count decides whether an enemy bursts into 3-6 small (100) and 0-1 big (500) jewels; carrots give no points |
+| A few classes and entity types did nothing visible | Sound makers (no model, a sound every spawn +8 frames: JM1 8-10, JM4 2/7, JM5 2/7); JM3 2/5 frees itself; JM5 2/5 is turning scenery |
+| The special weapons' numbers | Cherry bomb 3 a use, 300 frames; twisters and rockets 10 shots, one every 8 frames; roman candle 2 |
+
+Still open there: the per-world sound banks' remaining effects, and World 3's attack paths (stage data).
 
 ---
 
