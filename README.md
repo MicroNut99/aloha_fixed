@@ -75,6 +75,48 @@ ninja build/disc_us/SCUS_941.03 build/disc_us/TITLE.PEX build/disc_us/JM1/MAIN.P
 
 ---
 
+## Findings for the Jumping Flash CD32X port (`NOTES_CD32X.md`)
+
+Work on the Sega CD + 32X port ([MicroNut99/JumpingFlash_CD32X](https://github.com/MicroNut99/JumpingFlash_CD32X))
+turned up things that were misread, unknown or open in this decompilation. They are written up, with addresses
+and formats only (no game code or data), in [`NOTES_CD32X.md`](NOTES_CD32X.md); nothing in `src/` changes.
+
+| What was broken or unknown | What was found or fixed |
+|---|---|
+| Several stages' meshes looked unreadable: all of World 6's stage 1, World 6 Extra's sublevel and boss stage, three bonus sublevels | The per-mesh counts are stored as count - 1, so a count of 0 is `0xFFFFFFFF`. Read as a 32-bit number + 1 (wrapping to 0) they all load |
+| The boss stages and stage 2 of worlds 3-6 had no object placement where NOTES.md expects it (`7/1`) | "Layout B": no `5/x`, `7/x`, `8/x` files; meshes `4/2`, objects `6/1`, entities `6/0` |
+| Level section 0 was "entities and entity spawners (I think?)" | Its layout (a 32 x 32 grid of cells, 32-byte records: the spawn and a working copy) and the types: `0x40` carrots, `0x41` exit, `0x42` bonus things, `0x43` start, `0x44` pickups, `0x80 + n` enemy class n |
+| Ground textures with colour value 0 drew as black | Colour value 0 is see-through; World 6 and World 2-2 have no ground plane at all |
+| `sfx_play`'s effect numbers were opaque | High byte the VAB program, low byte the bank (`0x00` the shared `SYS_SE.VAB`, `0x1n` the world's own) and tone; the player's jumps, landing, hurt, points and the "enemy beaten" sound identified from their callers |
+| The kiwi's script tables had no address in `kiwi.c`; the enemy classes of other stages and worlds were not mapped | The kiwi's tables found; every world's stage class lists, each scripted class's script and label tables, and what its own opcodes do - found the same way in all twelve `MAIN.PEX` |
+| World 3's boss, World 5's boss and World 6's stage 2 boss did not fit the scripted pattern | They are hand-written state machines: World 3's boss is several parts, each a 24-state routine (patterns, timings and attacks mapped); World 5's is 15 blocks from a table of offsets, re-formed into three forms; World 6's stage 2 boss picks its moves by distance and angle |
+| World 5's enemy classes seemed to be on the wrong stages, and World 6's stage 2 and 3 bosses had no class | The class lists are read through the game's own accessor (searching for a row of pointers finds a false row in World 5, one list off); an entity type under 0x40 is a class number (those two bosses are type 0x00) |
+| World 5's three forms and World 6's stage 2 boss's moves were not read | Read state by state: form 1 walks and fires four, form 2 rests / drops on you / bombs / chases, form 3 spins and throws blocks; World 6's stage 2 boss leaps, goes to its spot and calls up to four hopping helpers every 64 frames |
+| World 3's boss attacks looked like code | Each pattern starts hit zones that follow keyframed paths from lists filled at run time (0x8010D000-0x8010D01C): the attacks' exact moves are stage data, not code. Pattern 2's slam (36 frames in, the screen shaken) is in the code |
+| The stage-end score screen was unknown | The tally (0x800D5190): 50 points a second left, 100 a heart, and a bonus from seven globals - 5 x the stage's points if never hit, 2 x if no special fired, 100 x the jewels' points if none missed, 30,000 for the carrots in order, 10,000 for three of one special |
+| Beaten enemies' drops were unknown | Jewels (0x800D1CBC): a luck count decides whether an enemy bursts into 3-6 small (100) and 0-1 big (500) jewels; carrots give no points |
+| A few classes and entity types did nothing visible | Sound makers (no model, a sound every spawn +8 frames: JM1 8-10, JM4 2/7, JM5 2/7); JM3 2/5 frees itself; JM5 2/5 is turning scenery |
+| The special weapons' numbers | Cherry bomb 3 a use, 300 frames; twisters and rockets 10 shots, one every 8 frames; roman candle 2 |
+
+Still open there: the per-world sound banks' remaining effects, and World 3's attack paths (stage data).
+
+## Code additions (8 Nov 2026)
+
+What was added to code, here and in the port, with this round of findings (each a commit of its own):
+
+| Where | What |
+|---|---|
+| this repository, branch `build-fixes` | `mkninja.py` (`CROSS=`, the Linux toolchain's embed format), `src/start.s` / `src/jm1/start.s` (`v0 = 0` before `syscall 0`), `src/title/1120.c` (the menu pages as named statics), `linker/symbols.*.ld` (47 old names mapped), `src/jm1/38F38.c`, `src/title/local_asm.c`, `tools/buildfix/regen.py` (the missing assembly regenerated from your disc) - see the top of this page |
+| this repository, `NOTES_CD32X.md` | the findings above, with addresses and formats (no game code or data) |
+| [JumpingFlash_CD32X](https://github.com/MicroNut99/JumpingFlash_CD32X) `jflash/src/enemies.c` | World 5's boss's three forms, World 6-2's boss with its four hopping helpers, World 3's slam and half turn, beaten enemies' jewels, the sound-only classes, the special weapons' counts - from the routines above |
+| JumpingFlash_CD32X `jflash/src/goal.c`, `main.c` | the stage-end tally as the game counts it (time, hearts, the seven-global bonus); carrots give no points |
+| JumpingFlash_CD32X `jflash/src/movie.c` | the movies' sound on the 32X's PWM at 22,050 Hz (each sample twice) and the PWM off after a movie: at 11,025 Hz its carrier was a whine on the console |
+| JumpingFlash_CD32X `jflash/src/render.c`, `main.c` | the cart engine's key; a frame-time profile on the HUD (the engine wait, the lists, the fill, the whole frame) read from the SH2's watchdog timer (the FRT never counts on a console: `crt0.s` clears it) |
+| JumpingFlash_CD32X `fpga/jfgeo/` | the cart geometry engine's memory side rebuilt after Rayman CD32X's: krikzz's `map_ssf` unchanged inside, off until a key, the console's reads straight to the SRAM, 5-clock PSRAM reads watched and redone; working on the console (V23, V24) |
+| [ares_android](https://github.com/MicroNut99/ares_android) `README-FPGA-FINDINGS.md` | what ares cannot show about a cart FPGA core, and the rules the cores that work on the console follow |
+
+---
+
 # Project Aloha
 
 A (nonmatching) decompilation of Jumping Flash on PSX.
